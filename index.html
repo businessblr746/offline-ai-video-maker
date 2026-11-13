@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101018">
+<title>Offline AI Video Maker</title>
+<style>
+body {
+  margin:0;
+  padding:20px;
+  background:#101018;
+  color:white;
+  font-family:Arial,sans-serif;
+  text-align:center;
+}
+h1 {color:#8b9cff}
+button,input {
+  margin:12px 0;
+  padding:14px;
+  border-radius:12px;
+  border:0;
+}
+button {
+  background:#6578ff;
+  color:white;
+  font-weight:bold;
+  width:100%;
+}
+canvas {
+  width:100%;
+  max-width:500px;
+  background:#252535;
+  border-radius:14px;
+  margin-top:15px;
+}
+</style>
+</head>
+<body>
+<h1>Offline AI Video Maker</h1>
+<p>Turn your photo into a moving video</p>
+
+<input type="file" id="photo" accept="image/*">
+
+<canvas id="screen" width="720" height="1280"></canvas>
+
+<button id="preview">Preview Animation</button>
+<button id="record">Create 5 Second Video</button>
+
+<p id="status">Select a photo to begin</p>
+<video id="result" controls playsinline style="width:100%"></video>
+<a id="save" style="color:white" download="my-video.mp4"></a>
+
+<script>
+const photo = document.getElementById("photo");
+const canvas = document.getElementById("screen");
+const ctx = canvas.getContext("2d");
+const statusText = document.getElementById("status");
+let img = new Image();
+let animation = false;
+
+photo.onchange = () => {
+  const file = photo.files[0];
+  if (!file) return;
+  img.onload = () => {
+    draw(0);
+    statusText.textContent = "Photo ready!";
+  };
+  img.src = URL.createObjectURL(file);
+};
+
+function draw(t) {
+  if (!img.src) return;
+  const scale = 1 + t * 0.15;
+  const ratio = Math.max(
+    canvas.width / img.width,
+    canvas.height / img.height
+  );
+  const w = img.width * ratio * scale;
+  const h = img.height * ratio * scale;
+  const x = (canvas.width-w)/2;
+  const y = (canvas.height-h)/2;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,x,y,w,h);
+}
+
+document.getElementById("preview").onclick = () => {
+  if (!img.src) return alert("Select a photo first");
+  animation = true;
+  const start = performance.now();
+  function frame(now) {
+    if (!animation) return;
+    const t = ((now-start)%5000)/5000;
+    draw(t);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+};
+
+document.getElementById("record").onclick = async () => {
+  if (!img.src) return alert("Select a photo first");
+  if (!canvas.captureStream || !window.MediaRecorder)
+    return alert("Video recording is not supported in this browser.");
+
+  animation = false;
+  const stream = canvas.captureStream(30);
+  let mime = "";
+  for (const type of ["video/mp4","video/webm"]) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      mime = type;
+      break;
+    }
+  }
+  if (!mime) return alert("Recording format not supported.");
+
+  const recorder = new MediaRecorder(stream,{mimeType:mime});
+  const chunks = [];
+  recorder.ondataavailable = e => {
+    if(e.data.size) chunks.push(e.data);
+  };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks,{type:mime});
+    const url = URL.createObjectURL(blob);
+    document.getElementById("result").src = url;
+    const save = document.getElementById("save");
+    save.href = url;
+    save.textContent = "Download Video";
+    save.download = mime.includes("mp4") ? "my-video.mp4" : "my-video.webm";
+    statusText.textContent = "Video created!";
+  };
+  recorder.start();
+  const start = performance.now();
+  function frame(now) {
+    const t = Math.min((now-start)/5000,1);
+    draw(t);
+    if(t<1) requestAnimationFrame(frame);
+    else recorder.stop();
+  }
+  requestAnimationFrame(frame);
+};
+</script>
+</body>
+</html>
