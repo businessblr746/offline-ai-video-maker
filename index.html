@@ -5,133 +5,202 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101018">
-<title>Offline AI Video Maker</title>
+<title>Offline AI Video Maker V3</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:18px;background:#101018;color:white;font-family:Arial}
+body{
+ margin:0;padding:18px;background:#101018;color:white;
+ font-family:Arial,sans-serif
+}
 h1{text-align:center;color:#91a0ff}
-p{color:#bbb}
-.panel{background:#202031;padding:15px;border-radius:15px;margin:14px 0}
-label{display:block;margin:14px 0 7px}
-input,select,textarea,button{width:100%;padding:13px;border-radius:10px;border:0;font-size:15px}
+.subtitle{text-align:center;color:#aaa}
+.panel{
+ background:#202031;padding:16px;border-radius:15px;
+ margin:15px 0
+}
+label{display:block;margin:14px 0 7px;font-weight:bold}
+input,select,textarea,button{
+ width:100%;padding:13px;border-radius:10px;
+ border:0;font-size:15px
+}
 input,select,textarea{background:#303044;color:white}
-button{background:#6578ff;color:white;font-weight:bold;margin-top:12px}
-canvas{width:100%;border-radius:12px;background:#252535}
-.small{font-size:12px;color:#aaa}
+button{
+ background:#6578ff;color:white;font-weight:bold;
+ margin-top:12px;cursor:pointer
+}
+button.secondary{background:#414158}
+canvas{
+ width:100%;border-radius:12px;background:#252535
+}
+video{width:100%;margin-top:12px;border-radius:12px}
+.small{font-size:12px;color:#aaa;line-height:1.5}
+a{color:#aab7ff}
 </style>
 </head>
 <body>
+
 <h1>Offline AI Video Maker</h1>
-<p style="text-align:center">Photo Animation Studio</p>
+<p class="subtitle">Photo Animation Studio V3</p>
 
 <div class="panel">
-<label>Select your photo</label>
-<input type="file" id="photo" accept="image/*">
+ <label>Select Photo</label>
+ <input type="file" id="photo" accept="image/*">
 </div>
 
 <div class="panel">
-<label>Camera movement</label>
-<select id="camera">
-<option value="zoom">Zoom In</option>
-<option value="out">Zoom Out</option>
-<option value="left">Move Left</option>
-<option value="right">Move Right</option>
-<option value="both">Zoom + Camera Movement</option>
-<option value="none">No Movement</option>
-</select>
+ <label>Camera Movement</label>
+ <select id="camera">
+  <option value="zoom">Zoom In</option>
+  <option value="out">Zoom Out</option>
+  <option value="left">Move Left</option>
+  <option value="right">Move Right</option>
+  <option value="both">Zoom + Movement</option>
+  <option value="none">No Movement</option>
+ </select>
 
-<label>Animation effect</label>
-<select id="effect">
-<option value="none">Normal</option>
-<option value="face">Face-style Pulse (simulated)</option>
-<option value="walk">Walking-style Motion (simulated)</option>
-</select>
+ <label>Animation Effect</label>
+ <select id="effect">
+  <option value="none">Normal</option>
+  <option value="face">Face-style Motion (Simulated)</option>
+  <option value="walk">Walking-style Motion (Simulated)</option>
+ </select>
 
-<label>Video duration</label>
-<select id="duration">
-<option value="5">5 Seconds</option>
-<option value="10">10 Seconds</option>
-<option value="15">15 Seconds</option>
-<option value="20">20 Seconds</option>
-</select>
+ <label>Video Duration</label>
+ <select id="duration">
+  <option value="5">5 Seconds</option>
+  <option value="10">10 Seconds</option>
+  <option value="15">15 Seconds</option>
+  <option value="20">20 Seconds</option>
+ </select>
 
-<label>Video quality</label>
-<select id="quality">
-<option value="480">480p</option>
-<option value="720" selected>720p</option>
-<option value="1080">1080p</option>
-</select>
+ <label>Video Quality</label>
+ <select id="quality">
+  <option value="480">480p</option>
+  <option value="720" selected>720p</option>
+  <option value="1080">1080p</option>
+ </select>
 </div>
 
 <div class="panel">
-<label>Hindi dialogue</label>
-<textarea id="dialogue" rows="3" placeholder="Yahan Hindi dialogue likhein..."></textarea>
-<button id="speak">Preview Hindi Voice</button>
-<p class="small">Voice availability depends on the Hindi voice installed on your iPhone. Preview audio is not included in the exported video.</p>
+ <h3>Hindi AI Voice</h3>
+
+ <label>Select Voice</label>
+ <select id="voiceChoice">
+  <option value="aman">Aman - Male</option>
+  <option value="kiyara">Kiyara - Female</option>
+ </select>
+
+ <label>Hindi Dialogue</label>
+ <textarea id="dialogue" rows="4"
+ placeholder="Apna Hindi dialogue yahan likhein..."></textarea>
+
+ <label>Voice Speed</label>
+ <input id="voiceSpeed" type="range"
+ min="0.7" max="1.3" step="0.1" value="1">
+
+ <p id="voiceStatus" class="small">Checking Hindi voices...</p>
+
+ <button id="speak">Preview Hindi Voice</button>
+ <button id="stopVoice" class="secondary">Stop Voice</button>
+
+ <p class="small">
+ Aman aur Kiyara voice labels hain. Actual voices
+ iPhone mein installed Hindi voices par depend karengi.
+ </p>
 </div>
 
 <div class="panel">
-<canvas id="screen" width="720" height="1280"></canvas>
-<button id="preview">Preview Animation</button>
-<button id="record">Create Video</button>
-<p id="status">Please select a photo.</p>
-<video id="result" controls playsinline style="width:100%"></video>
-<a id="save" style="display:block;color:#aab7ff;margin-top:15px"></a>
+ <h3>Video Preview</h3>
+ <canvas id="screen" width="720" height="1280"></canvas>
+
+ <button id="preview">Preview Animation</button>
+ <button id="record">Create Video</button>
+
+ <p id="status">Select a photo to begin.</p>
+ <video id="result" controls playsinline></video>
+ <a id="save"></a>
+ <p class="small">
+ Exported video contains the visual animation.
+ Hindi voice preview is separate and is not merged
+ into the video in this version.
+ </p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const canvas = $("screen");
 const ctx = canvas.getContext("2d");
+
 let img = new Image();
 let ready = false;
 let running = false;
-let startTime = 0;
-let previewFrame;
+let previewFrame = null;
+let photoURL = null;
 
-$("photo").onchange = () => {
+function stopAnimation(){
+ running = false;
+ if(previewFrame) cancelAnimationFrame(previewFrame);
+}
+
+$("photo").addEventListener("change",()=>{
  const file = $("photo").files[0];
- if (!file) return;
- const url = URL.createObjectURL(file);
- img.onload = () => {
-  ready = true;
+ if(!file) return;
+
+ stopAnimation();
+ if(photoURL) URL.revokeObjectURL(photoURL);
+
+ photoURL = URL.createObjectURL(file);
+
+ img.onload=()=>{
+  ready=true;
   draw(0);
-  $("status").textContent = "Photo ready!";
+  $("status").textContent="Photo ready!";
  };
- img.src = url;
-};
+ img.onerror=()=>{
+  $("status").textContent="Unable to load photo.";
+ };
+ img.src=photoURL;
+});
 
-function draw(seconds) {
- if (!ready) return;
- const duration = Number($("duration").value);
- const t = Math.min(seconds / duration, 1);
- const camera = $("camera").value;
- const effect = $("effect").value;
+function draw(seconds){
+ if(!ready) return;
 
- let zoom = 1;
- let shiftX = 0;
- let shiftY = 0;
+ const duration=Number($("duration").value);
+ const t=Math.min(seconds/duration,1);
+ const camera=$("camera").value;
+ const effect=$("effect").value;
+
+ let zoom=1;
+ let shiftX=0;
+ let shiftY=0;
 
  if(camera==="zoom") zoom=1+0.22*t;
  if(camera==="out") zoom=1.22-0.22*t;
  if(camera==="left") shiftX=-100*t;
  if(camera==="right") shiftX=100*t;
- if(camera==="both") {
+
+ if(camera==="both"){
   zoom=1+0.16*t;
   shiftX=-70*t;
  }
 
- if(effect==="face") {
-  zoom *= 1 + Math.sin(seconds*3)*0.012;
- }
- if(effect==="walk") {
-  shiftX += Math.sin(seconds*8)*12;
-  shiftY += Math.abs(Math.sin(seconds*8))*7;
+ if(effect==="face"){
+  zoom*=1+Math.sin(seconds*3)*0.012;
  }
 
- const scale=Math.max(canvas.width/img.width,canvas.height/img.height)*zoom;
+ if(effect==="walk"){
+  shiftX+=Math.sin(seconds*8)*12;
+  shiftY+=Math.abs(Math.sin(seconds*8))*7;
+ }
+
+ const scale=Math.max(
+  canvas.width/img.width,
+  canvas.height/img.height
+ )*zoom;
+
  const w=img.width*scale;
  const h=img.height*scale;
+
  const x=(canvas.width-w)/2+shiftX;
  const y=(canvas.height-h)/2+shiftY;
 
@@ -139,83 +208,182 @@ function draw(seconds) {
  ctx.drawImage(img,x,y,w,h);
 }
 
-function previewLoop(now) {
- if(!running) return;
- const seconds=(now-startTime)/1000;
- draw(seconds);
- previewFrame=requestAnimationFrame(previewLoop);
-}
-
 $("preview").onclick=()=>{
  if(!ready) return alert("Please select a photo.");
- cancelAnimationFrame(previewFrame);
+
+ stopAnimation();
  running=true;
- startTime=performance.now();
- previewFrame=requestAnimationFrame(previewLoop);
+
+ const start=performance.now();
+
+ function frame(now){
+  if(!running) return;
+  const seconds=(now-start)/1000;
+  draw(seconds);
+  previewFrame=requestAnimationFrame(frame);
+ }
+
+ previewFrame=requestAnimationFrame(frame);
 };
+
+function getHindiVoices(){
+ if(!("speechSynthesis" in window)) return [];
+ return speechSynthesis.getVoices().filter(
+  voice=>voice.lang.toLowerCase().startsWith("hi")
+ );
+}
+
+function updateVoiceStatus(){
+ const voices=getHindiVoices();
+
+ $("voiceStatus").textContent=voices.length
+  ? voices.length+" Hindi voice(s) available on this iPhone."
+  : "No Hindi voice detected. Check iPhone voice settings.";
+}
+
+if("speechSynthesis" in window){
+ updateVoiceStatus();
+ speechSynthesis.onvoiceschanged=updateVoiceStatus;
+}
 
 $("speak").onclick=()=>{
  const text=$("dialogue").value.trim();
+
  if(!text) return alert("Please write a Hindi dialogue.");
+
  if(!("speechSynthesis" in window))
-  return alert("Speech preview is not supported in this browser.");
+  return alert("Speech is not supported in this browser.");
+
+ const voices=getHindiVoices();
+
+ if(!voices.length){
+  updateVoiceStatus();
+  return alert("Hindi voice is not available.");
+ }
+
  speechSynthesis.cancel();
+
+ const choice=$("voiceChoice").value;
+
+ // Select a voice from installed Hindi voices.
+ // The first and second voices are not guaranteed
+ // to be male and female.
+ const index=choice==="aman"
+  ? 0
+  : Math.min(1,voices.length-1);
+
  const utterance=new SpeechSynthesisUtterance(text);
+ utterance.voice=voices[index];
  utterance.lang="hi-IN";
+ utterance.rate=Number($("voiceSpeed").value);
+
+ utterance.onstart=()=>{
+  $("voiceStatus").textContent="Hindi voice playing...";
+ };
+ utterance.onend=updateVoiceStatus;
+ utterance.onerror=()=>{
+  $("voiceStatus").textContent="Voice playback error.";
+ };
+
  speechSynthesis.speak(utterance);
 };
 
-$("record").onclick=()=>{
- if(!ready) return alert("Please select a photo.");
- if(!canvas.captureStream || !window.MediaRecorder)
-  return alert("Video recording is not supported in this browser.");
+$("stopVoice").onclick=()=>{
+ if("speechSynthesis" in window){
+  speechSynthesis.cancel();
+  updateVoiceStatus();
+ }
+};
 
- running=false;
- cancelAnimationFrame(previewFrame);
+$("record").onclick=()=>{
+ if(!ready) return alert("Please select a photo first.");
+
+ if(!canvas.captureStream || !window.MediaRecorder){
+  return alert("Video recording is not supported in this browser.");
+ }
+
+ stopAnimation();
+
  const height=Number($("quality").value);
  canvas.width=Math.round(height*9/16);
  canvas.height=height;
 
  const stream=canvas.captureStream(30);
  let mime="";
- for(const type of ["video/mp4;codecs=h264","video/mp4","video/webm"]) {
-  if(MediaRecorder.isTypeSupported(type)){mime=type;break;}
+
+ const formats=[
+  "video/mp4;codecs=h264",
+  "video/mp4",
+  "video/webm"
+ ];
+
+ for(const format of formats){
+  if(MediaRecorder.isTypeSupported(format)){
+   mime=format;
+   break;
+  }
  }
- if(!mime) return alert("Recording format not supported.");
+
+ if(!mime){
+  stream.getTracks().forEach(t=>t.stop());
+  return alert("No supported recording format found.");
+ }
 
  let recorder;
- try {
-  recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:
-   height>=1080?5000000:height>=720?2500000:1000000});
- } catch(e) {
-  return alert("Could not start video recording.");
+
+ try{
+  recorder=new MediaRecorder(stream,{
+   mimeType:mime,
+   videoBitsPerSecond:height>=1080?5000000:
+    height>=720?2500000:1000000
+  });
+ }catch(error){
+  stream.getTracks().forEach(t=>t.stop());
+  return alert("Unable to start video recording.");
  }
 
  const chunks=[];
- recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
- recorder.onerror=()=>{$("status").textContent="Recording error.";};
+
+ recorder.ondataavailable=e=>{
+  if(e.data.size) chunks.push(e.data);
+ };
+
+ recorder.onerror=()=>{
+  $("status").textContent="Recording failed.";
+ };
+
  recorder.onstop=()=>{
   const blob=new Blob(chunks,{type:mime});
   const url=URL.createObjectURL(blob);
+
   $("result").src=url;
   $("save").href=url;
-  $("save").download=mime.includes("mp4")?"my-video.mp4":"my-video.webm";
+  $("save").download=mime.includes("mp4")
+   ?"my-video.mp4":"my-video.webm";
   $("save").textContent="Download Your Video";
+
   $("status").textContent="Video created successfully!";
-  stream.getTracks().forEach(track=>track.stop());
+  stream.getTracks().forEach(t=>t.stop());
  };
 
  $("status").textContent="Creating video...";
+
  recorder.start();
+
  const duration=Number($("duration").value);
  const start=performance.now();
 
- function frame(now) {
+ function frame(now){
   const seconds=(now-start)/1000;
   draw(seconds);
-  if(seconds<duration) requestAnimationFrame(frame);
-  else recorder.stop();
+
+  if(seconds<duration){
+   requestAnimationFrame(frame);
+  }else{
+   recorder.stop();
+  }
  }
+
  requestAnimationFrame(frame);
 };
 </script>
