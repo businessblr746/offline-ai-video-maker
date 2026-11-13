@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hindi Voice Test</title>
+<title>Aman and Kiyara Voice Test</title>
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -20,6 +20,7 @@ select, button, textarea {
   padding: 13px;
   margin: 10px 0;
   font-size: 16px;
+  box-sizing: border-box;
 }
 button {
   background: #1769e0;
@@ -27,74 +28,83 @@ button {
   border: 0;
   border-radius: 8px;
 }
+#status {
+  overflow-wrap: anywhere;
+}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>Hindi Voice Test</h2>
+<h2>Aman and Kiyara Hindi Voice Test</h2>
 
-<label>Select Hindi Voice:</label>
-<select id="voiceSelect"></select>
+<label>Select Character:</label>
+<select id="character">
+  <option value="aman">Aman - Male</option>
+  <option value="kiyara">Kiyara - Female</option>
+</select>
 
 <textarea id="dialogue" rows="4">Namaste! Aap kaise hain?</textarea>
 
-<button onclick="speak()">Test Selected Voice</button>
-<button onclick="loadVoices()">Refresh Voice List</button>
+<button onclick="testVoice()">Play Voice</button>
+<button onclick="checkVoices()">Refresh Voice List</button>
 
-<p id="status">Loading voices...</p>
+<p id="status">Checking iPhone voices...</p>
 </div>
 
 <script>
-let voices = [];
+let availableVoices = [];
 
-function loadVoices() {
-  voices = speechSynthesis.getVoices();
+function checkVoices() {
+  availableVoices = speechSynthesis.getVoices();
 
-  const hindi = voices.filter(v =>
+  const hindiVoices = availableVoices.filter(v =>
     v.lang.toLowerCase().startsWith("hi")
   );
 
-  const select = document.getElementById("voiceSelect");
-  select.innerHTML = "";
-
-  hindi.forEach((voice, i) => {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = voice.name + " (" + voice.lang + ")";
-    select.appendChild(option);
-  });
+  const names = hindiVoices.map(v =>
+    v.name + " (" + v.lang + ")"
+  );
 
   document.getElementById("status").textContent =
-    hindi.length
-    ? hindi.length + " Hindi voice(s) found."
-    : "No Hindi voices accessible in Safari.";
-
-  window.hindiVoices = hindi;
+    "Hindi voices Safari can access: " +
+    (names.length ? names.join(" | ") : "None found");
 }
 
-function speak() {
-  const hindi = window.hindiVoices || [];
-  const index = document.getElementById("voiceSelect").value;
-  const voice = hindi[index];
+function testVoice() {
+  const character =
+    document.getElementById("character").value;
+
+  const target = character === "aman" ? "neel" : "lekha";
+
+  const voice = availableVoices.find(v =>
+    v.lang.toLowerCase().startsWith("hi") &&
+    v.name.toLowerCase().includes(target)
+  );
 
   if (!voice) {
-    alert("No Hindi voice selected.");
+    document.getElementById("status").textContent =
+      target.toUpperCase() +
+      " voice is not accessible to Safari. Refresh or check voice availability.";
     return;
   }
 
   speechSynthesis.cancel();
 
-  const msg = new SpeechSynthesisUtterance(
+  const message = new SpeechSynthesisUtterance(
     document.getElementById("dialogue").value
   );
 
-  msg.voice = voice;
-  msg.lang = voice.lang;
-  speechSynthesis.speak(msg);
+  message.voice = voice;
+  message.lang = voice.lang;
+
+  document.getElementById("status").textContent =
+    "Playing " + character + ": " + voice.name;
+
+  speechSynthesis.speak(message);
 }
 
-speechSynthesis.onvoiceschanged = loadVoices;
-setTimeout(loadVoices, 1500);
+speechSynthesis.onvoiceschanged = checkVoices;
+setTimeout(checkVoices, 1500);
 </script>
 </body>
 </html>
