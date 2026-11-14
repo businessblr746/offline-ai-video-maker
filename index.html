@@ -1,109 +1,3 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aman & Kiyara Talking Photo</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #101827;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
-.container {
-  max-width: 550px;
-  margin: auto;
-  background: #1e293b;
-  padding: 20px;
-  border-radius: 15px;
-}
-input, select, textarea, button {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 10px 0;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 16px;
-}
-textarea { height: 100px; }
-button {
-  background: #16a34a;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:disabled { opacity: .5; }
-canvas {
-  width: 100%;
-  margin-top: 15px;
-  border-radius: 10px;
-  background: #000;
-}
-#status { color: #facc15; }
-a { color: #60a5fa; }
-</style>
-</head>
-<body>
-<div class="container">
-<h2>🎬 Aman & Kiyara Talking Photo</h2>
-<p>Free basic talking photo maker</p>
-
-<label>Upload Photo</label>
-<input type="file" id="photo" accept="image/*">
-
-<label>Select Character Voice</label>
-<select id="character">
-<option value="male">Aman - Male</option>
-<option value="female">Kiyara - Female</option>
-</select>
-
-<label>Enter Hindi Dialogue</label>
-<textarea id="dialogue" placeholder="Yahan apna Hindi dialogue likho..."></textarea>
-
-<button id="preview">▶ Speak & Preview</button>
-<button id="make">🎥 Create Silent Video</button>
-
-<p id="status">Upload a photo to begin.</p>
-
-<canvas id="screen" width="720" height="900"></canvas>
-
-<a id="download" style="display:none" download="talking-photo.webm">
-<br>⬇ Download Video
-</a>
-</div>
-
-<script>
-const photoInput = document.getElementById("photo");
-const canvas = document.getElementById("screen");
-const ctx = canvas.getContext("2d");
-const statusText = document.getElementById("status");
-const previewBtn = document.getElementById("preview");
-const makeBtn = document.getElementById("make");
-const downloadLink = document.getElementById("download");
-
-let photo = null;
-let animationId = null;
-let talking = false;
-let mouthPhase = 0;
-
-photoInput.addEventListener("change", () => {
-  const file = photoInput.files[0];
-  if (!file) return;
-
-  const img = new Image();
-  img.onload = () => {
-    photo = img;
-    drawFrame();
-    statusText.textContent = "Photo ready.";
-    URL.revokeObjectURL(img.src);
-  };
-  img.src = URL.createObjectURL(file);
-});
-
 function drawFrame() {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -116,10 +10,15 @@ function drawFrame() {
     return;
   }
 
+  const elapsed = animationStart
+    ? (performance.now() - animationStart) / 1000
+    : 0;
+
+  const zoom = 1 + Math.min(elapsed * 0.012, 0.08);
   const scale = Math.max(
     canvas.width / photo.width,
     canvas.height / photo.height
-  );
+  ) * zoom;
 
   const w = photo.width * scale;
   const h = photo.height * scale;
@@ -132,6 +31,23 @@ function drawFrame() {
     h
   );
 
+  // Warm cinematic lighting
+  ctx.fillStyle = "rgba(255, 170, 80, 0.10)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Movie-style dark edges
+  const vignette = ctx.createRadialGradient(
+    360, 450, 180, 360, 450, 650
+  );
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.65)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Fade in
+  ctx.fillStyle = `rgba(0,0,0,${Math.max(0, 1 - elapsed / 1.2)})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   if (talking) {
     const x = canvas.width * 0.5;
     const y = canvas.height * 0.70;
@@ -142,149 +58,5 @@ function drawFrame() {
     ctx.beginPath();
     ctx.ellipse(x, y, width, height, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.strokeStyle = "#6b2020";
-    ctx.lineWidth = 3;
-    ctx.stroke();
   }
 }
-
-function animate() {
-  mouthPhase += 0.45;
-  drawFrame();
-  animationId = requestAnimationFrame(animate);
-}
-
-function startTalking() {
-  if (!photo) {
-    statusText.textContent = "Please upload a photo first.";
-    return false;
-  }
-
-  const dialogue = document.getElementById("dialogue").value.trim();
-  if (!dialogue) {
-    statusText.textContent = "Please enter a dialogue.";
-    return false;
-  }
-
-  if (!("speechSynthesis" in window)) {
-    statusText.textContent = "Speech is not supported in this browser.";
-    return false;
-  }
-
-  speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(dialogue);
-  utterance.lang = "hi-IN";
-  utterance.rate = 0.9;
-
-  const voices = speechSynthesis.getVoices();
-  const hindiVoices = voices.filter(v =>
-    v.lang.toLowerCase().startsWith("hi")
-  );
-
-  if (hindiVoices.length) {
-    const female = document.getElementById("character").value === "female";
-    utterance.voice = hindiVoices.find(v =>
-      female
-        ? /female|woman|heera|kalpana/i.test(v.name)
-        : /male|man|hemant/i.test(v.name)
-    ) || hindiVoices[0];
-  }
-
-  return utterance;
-}
-
-previewBtn.addEventListener("click", () => {
-  const utterance = startTalking();
-  if (!utterance) return;
-
-  talking = true;
-  cancelAnimationFrame(animationId);
-  animate();
-
-  utterance.onend = () => {
-    talking = false;
-    cancelAnimationFrame(animationId);
-    drawFrame();
-    statusText.textContent = "Preview finished.";
-  };
-
-  utterance.onerror = () => {
-    talking = false;
-    cancelAnimationFrame(animationId);
-    drawFrame();
-    statusText.textContent = "Speech could not play.";
-  };
-
-  statusText.textContent = "Speaking...";
-  speechSynthesis.speak(utterance);
-});
-
-makeBtn.addEventListener("click", () => {
-  const utterance = startTalking();
-  if (!utterance) return;
-
-  if (!window.MediaRecorder || !canvas.captureStream) {
-    statusText.textContent = "Video recording is not supported here.";
-    return;
-  }
-
-  const stream = canvas.captureStream(25);
-  let recorder;
-
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
-
-  try {
-    recorder = new MediaRecorder(stream, { mimeType: mime });
-  } catch (e) {
-    statusText.textContent = "Video recording is unavailable.";
-    return;
-  }
-
-  const chunks = [];
-  recorder.ondataavailable = e => {
-    if (e.data.size) chunks.push(e.data);
-  };
-
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: "video/webm" });
-    downloadLink.href = URL.createObjectURL(blob);
-    downloadLink.style.display = "inline-block";
-    statusText.textContent = "Video ready! Download below.";
-    stream.getTracks().forEach(track => track.stop());
-    makeBtn.disabled = false;
-  };
-
-  downloadLink.style.display = "none";
-  makeBtn.disabled = true;
-  talking = true;
-  cancelAnimationFrame(animationId);
-  animate();
-
-  recorder.start();
-  statusText.textContent = "Creating silent video...";
-
-  utterance.onend = () => {
-    talking = false;
-    cancelAnimationFrame(animationId);
-    drawFrame();
-    recorder.stop();
-  };
-
-  utterance.onerror = () => {
-    talking = false;
-    cancelAnimationFrame(animationId);
-    if (recorder.state !== "inactive") recorder.stop();
-    statusText.textContent = "Speech failed. Please try again.";
-  };
-
-  speechSynthesis.speak(utterance);
-});
-
-drawFrame();
-</script>
-</body>
-</html>
