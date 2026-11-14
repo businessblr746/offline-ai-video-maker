@@ -2,109 +2,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aman and Kiyara Voice Test</title>
+<title>Aman & Kiyara AI Video Maker</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
-  padding: 20px;
-}
-.container {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-}
-select, button, textarea {
-  width: 100%;
-  padding: 13px;
-  margin: 10px 0;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-button {
-  background: #1769e0;
-  color: white;
-  border: 0;
-  border-radius: 8px;
-}
-#status {
-  overflow-wrap: anywhere;
-}
+body{font-family:Arial;background:#101323;color:white;padding:18px;margin:0}
+.container{max-width:520px;margin:auto;background:#202943;padding:20px;border-radius:16px}
+h2{text-align:center}
+label{display:block;margin-top:15px}
+input,select,textarea,button{width:100%;padding:13px;margin-top:8px;box-sizing:border-box;border-radius:9px;font-size:16px}
+textarea{height:110px}
+button{background:#7657ed;color:white;border:0;font-weight:bold;cursor:pointer}
+#status{overflow-wrap:anywhere;line-height:1.5}
+img,video{width:100%;margin-top:15px;border-radius:10px}
+a{color:#b9a8ff}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>Aman and Kiyara Hindi Voice Test</h2>
+<h2>🎬 Aman & Kiyara AI Video Maker</h2>
 
-<label>Select Character:</label>
-<select id="character">
-  <option value="aman">Aman - Male</option>
-  <option value="kiyara">Kiyara - Female</option>
+<label>Upload Your Photo</label>
+<input type="file" id="photo" accept="image/jpeg,image/png,image/webp">
+<img id="preview" hidden>
+
+<label>Select Character Voice</label>
+<select id="voice">
+<option value="Puck (Male)">Aman - Male</option>
+<option value="Zephyr (Female)">Kiyara - Female</option>
 </select>
 
-<textarea id="dialogue" rows="4">Namaste! Aap kaise hain?</textarea>
+<label>Enter Hindi Dialogue</label>
+<textarea id="script" placeholder="Enter your Hindi dialogue here...">नमस्ते! आप कैसे हैं?</textarea>
 
-<button onclick="testVoice()">Play Voice</button>
-<button onclick="checkVoices()">Refresh Voice List</button>
+<label>Video Quality</label>
+<select id="resolution">
+<option value="720p">720p HD</option>
+<option value="1080p">1080p Full HD</option>
+</select>
 
-<p id="status">Checking iPhone voices...</p>
+<button id="generate" onclick="generateVideo()">Generate Talking Video</button>
+
+<p id="status">Upload a portrait photo to get started.</p>
+
+<video id="result" controls playsinline hidden></video>
+<a id="download" hidden download="talking-video.mp4">Download Video</a>
 </div>
 
 <script>
-let availableVoices = [];
+const API_URL =
+"https://summer-boat-451bai-video-backend.businessblr746.workers.dev/";
 
-function checkVoices() {
-  availableVoices = speechSynthesis.getVoices();
+const photoInput = document.getElementById("photo");
+const preview = document.getElementById("preview");
+const statusText = document.getElementById("status");
 
-  const hindiVoices = availableVoices.filter(v =>
-    v.lang.toLowerCase().startsWith("hi")
-  );
+photoInput.addEventListener("change", () => {
+  const file = photoInput.files[0];
+  if (!file) return;
+  preview.src = URL.createObjectURL(file);
+  preview.hidden = false;
+});
 
-  const names = hindiVoices.map(v =>
-    v.name + " (" + v.lang + ")"
-  );
+async function generateVideo() {
+  const photo = photoInput.files[0];
+  const script = document.getElementById("script").value.trim();
+  const voice = document.getElementById("voice").value;
+  const resolution = document.getElementById("resolution").value;
+  const button = document.getElementById("generate");
 
-  document.getElementById("status").textContent =
-    "Hindi voices Safari can access: " +
-    (names.length ? names.join(" | ") : "None found");
-}
-
-function testVoice() {
-  const character =
-    document.getElementById("character").value;
-
-  const target = character === "aman" ? "neel" : "lekha";
-
-  const voice = availableVoices.find(v =>
-    v.lang.toLowerCase().startsWith("hi") &&
-    v.name.toLowerCase().includes(target)
-  );
-
-  if (!voice) {
-    document.getElementById("status").textContent =
-      target.toUpperCase() +
-      " voice is not accessible to Safari. Refresh or check voice availability.";
+  if (!photo) {
+    statusText.textContent = "Please upload a photo first.";
     return;
   }
 
-  speechSynthesis.cancel();
+  if (!script) {
+    statusText.textContent = "Please enter your Hindi dialogue.";
+    return;
+  }
 
-  const message = new SpeechSynthesisUtterance(
-    document.getElementById("dialogue").value
-  );
+  button.disabled = true;
+  button.textContent = "Generating...";
+  statusText.textContent = "Sending your photo to AI. Please wait...";
+  document.getElementById("result").hidden = true;
+  document.getElementById("download").hidden = true;
 
-  message.voice = voice;
-  message.lang = voice.lang;
+  try {
+    const form = new FormData();
+    form.append("photo", photo);
+    form.append("script", script);
+    form.append("voice", voice);
+    form.append("resolution", resolution);
 
-  document.getElementById("status").textContent =
-    "Playing " + character + ": " + voice.name;
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: form
+    });
 
-  speechSynthesis.speak(message);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Video generation failed.");
+    }
+
+    const videoUrl = data.data?.result?.video;
+
+    if (!videoUrl) {
+      throw new Error("AI did not return a video URL.");
+    }
+
+    const video = document.getElementById("result");
+    video.src = videoUrl;
+    video.hidden = false;
+
+    const download = document.getElementById("download");
+    download.href = videoUrl;
+    download.hidden = false;
+
+    statusText.textContent = "Your talking video is ready!";
+
+  } catch (error) {
+    statusText.textContent = "Error: " + error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Generate Talking Video";
+  }
 }
-
-speechSynthesis.onvoiceschanged = checkVoices;
-setTimeout(checkVoices, 1500);
 </script>
 </body>
 </html>
